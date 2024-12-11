@@ -2,76 +2,115 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Student;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class StudentController extends Controller
 {
-    public function index() {
-        $students = Student::all();
+    public function index()
+    {
+        // melihat data
+        // query builder student = DB::table('student')->get();
+        $student = Student::All(); // menggunakan eloquent
+
+        if ($student) {
+            $data = [
+                'message' => 'Berhasil akses data',
+                'data' => $student
+            ];
+
+            return response()->json($data,200);
+        } else {
+            return response()->json(['message' => 'Data tidak ditemukan!'], 404);
+        }
+    }
+
+    public function create()
+    {
+        //
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'nim' => 'required|string|max:20',
+            'email' => 'required|email',
+            'jurusan' => 'required|string|max:100'
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+    
+        // $input = $validator->validated();
+        // $student = Student::create($input);
+
+        $students = Student::create($request->all());
     
         $data = [
-            'message' => 'Get all students',
+            'message' => 'Berhasil menambah data',
             'data' => $students
+        ];
+        
+        return response()->json($data, 201);
+    }
+
+    public function show(string $id)
+    {
+        $student = Student::find($id);
+
+        if ($student) {
+            return response()->json($student, 200);
+        }
+
+        return response()->json(['message' => 'Data tidak ditemukan!'], 404);
+    }
+
+    public function update(Request $request, string $id)
+    {
+        $student = Student::find($id);
+
+        if (!$student) {
+            return response()->json(['message' => 'Data tidak ditemukan!'], 404);
+        }
+
+        $input = [
+            'nama' => $request->nama ?? $student->nama,
+            'nim' => $request->nim ?? $student->nim,
+            'email' => $request->email ?? $student->email,
+            'jurusan' => $request->jurusan ?? $student->jurusan,
+        ];
+
+        $student->update($input);
+
+        $data = [
+            'message' => 'Berhasil mengubah data',
+            'data' => $student,
         ];
 
         return response()->json($data, 200);
     }
 
-    public function store(Request $request)
+    public function destroy(string $id)
     {
-        $input = [
-            'nama' => $request->nama,
-            'nim' => $request->nim,
-            'email' => $request->email,
-            'jurusan' => $request->jurusan
-        ];
-
-        $student = Student::create($input);
-
-        $data = [
-            'message' => 'Student is created succesfully',
-            'data' => $student,
-        ];
-
-        return response()->json($data, 201);
-    }
-
-    
-    public function update(Request $request, $id){
         $student = Student::find($id);
 
-        if ($student) {
-            $input = $request->only('nama', 'nim', 'email', 'jurusan');
-            $student->update($input);
-            $data = [
-                'message' => 'Student is updated',
-                'data' => $student
-            ];
-            return response()->json($data, 200);
-        } else {
-            $data = [
-                'message' => 'Student not found'
-            ];
-            return response()->json($data, 404);
-        }
-    }
-    
-    public function destroy($id) {
-        $student = Student::find($id);
-        
         if (!$student) {
-            return response()->json([
-                'message' => 'Student not found',
-            ], 404);
+            return response()->json(['message' => 'Data tidak ditemukan!'], 404);
         }
 
         $student->delete();
-    
-        return response()->json([
-            'message' => 'Student deleted successfully',
-        ], 200);
+
+        $data = [
+            'message' => 'Berhasil menghapus data',
+            'data' => $student,
+        ];
+
+        return response()->json($data, 200);
     }
-    
 }
